@@ -16,9 +16,9 @@ class OAuth
      */
     public function handle($request, Closure $next, $guard = null)
     {
-        // cookie 中有 access token 时，使用 access token 访问 API，
+        // TODO cookie 中有 access token 时，使用 access token 访问 API，
         // 否则跳转到open授权页面
-        $access_token = $request->cookie('access_token');
+        $access_token = $request->session()->get('access_token');
         if (!$access_token)
         {
             $redirect_uri = 'http://gift.radision.biz';
@@ -45,24 +45,25 @@ class OAuth
                 'redirect_uri'      => $redirect_uri,
                 'code'              => $code,
             );
-            $access_token = config('oauth.access_token');
-            $fetch_access_token_url = $oauth_server.$access_token;
-            $handle = curl_init($fetch_access_token_url);
-            curl_setopt($handle, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($handle, CURLOPT_POST, true);
-            curl_setopt($handle, CURLOPT_POSTFIELDS, $post_data);
-            curl_setopt($handle, CURLOPT_SSL_VERIFYPEER, false);
-            $resp = curl_exec($handle);
-            echo $resp;exit();
-            if (curl_errno($handle))
+
+            $access_token_url = config('oauth.access_token');
+            $fetch_access_token_url = $oauth_server.$access_token_url;
+
+            $client = new \GuzzleHttp\Client();
+            $res = $client->request('POST', $fetch_access_token_url, array('json' => $post_data), array('verify' => false));
+
+            $code = $res->getStatusCode();
+            if ($code == 200)
             {
-                echo curl_error($handle);
-                exit();
+                $body = $res->getBody();
+                $content = $body->getContents();
+                $data = json_decode($content, true);
+                $data['expired'] = time() + $data['expires_in'];
+
+                $request->session()->put('access_token', serialize($data));
             }
-            curl_close();
-            $result = json_decode($resp, true);
-            print_r($result);exit();
         }
+        return $next($request);
     }
 
 }
