@@ -26,6 +26,7 @@ class OAuth
             $oauth_server = config('oauth.server');
             if (!$code)
             {
+                $oauth_home = config('oauth.home');
                 $authorize = config('oauth.authorize');
                 $client_id = config('oauth.client_id');
                 $params = array(
@@ -35,7 +36,7 @@ class OAuth
                     'redirect_uri'      => $redirect_uri,
                 );
                 $params_str = http_build_query($params);
-                $url = "{$oauth_server}{$authorize}?{$params_str}";
+                $url = "{$oauth_server}{$home}?{$params_str}";
                 return redirect($url);
             }
             $post_data = array(

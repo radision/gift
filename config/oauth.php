@@ -8,6 +8,7 @@ return [
 
     'server'            => 'http://open.radision.biz',
 
+    'home'              => '/home',
     'authorize'         => '/oauth/authorize',
     'access_token'      => '/oauth/access_token',
 
